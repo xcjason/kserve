@@ -12,6 +12,9 @@
 # limitations under the License.
 
 from typing import Dict
+import grpc
+import tritonclient.grpc as grpcclient
+from tritonclient.grpc import service_pb2, service_pb2_grpc
 import sys
 import inspect
 import json
@@ -47,6 +50,7 @@ class KFModel:
         # timeouts should be handled elsewhere in the system.
         self.timeout = 600
         self._http_client_instance = None
+        self._grpc_client_stub = None
 
     async def __call__(self, body, model_type: ModelType = ModelType.PREDICTOR):
         request = await self.preprocess(body) if inspect.iscoroutinefunction(self.preprocess) \
@@ -62,6 +66,13 @@ class KFModel:
             raise NotImplementedError
         response = self.postprocess(response)
         return response
+
+    @property
+    def _grpc_client(self):
+        if self._grpc_client_stub is None:
+            _channel = grpc.aio.insecure_channel(self.predictor_host)
+            self._grpc_client_stub = service_pb2_grpc.GRPCInferenceServiceStub(_channel)
+        return self._grpc_client_stub
 
     @property
     def _http_client(self):
@@ -134,15 +145,7 @@ class KFModel:
         """
         return request
 
-    async def predict(self, request: Dict) -> Dict:
-        """
-        The predict handler can be overridden to implement the model inference.
-        The default implementation makes an call to the predictor if predictor_host is specified
-        :param request: Dict passed from preprocess handler
-        :return: Dict
-        """
-        if not self.predictor_host:
-            raise NotImplementedError
+    async def _http_predict(self, request: Dict) -> Dict:
         predict_url = PREDICTOR_URL_FORMAT.format(self.predictor_host, self.name)
         if self.protocol == "v2":
             predict_url = PREDICTOR_V2_URL_FORMAT.format(self.predictor_host, self.name)
@@ -157,6 +160,27 @@ class KFModel:
                 status_code=response.code,
                 reason=response.body)
         return json.loads(response.body)
+
+    async def _grpc_predict(self, input: grpcclient.InferInput) -> Dict:
+        request = service_pb2.ModelInferRequest()
+        async_result = await self._grpc_client_stub.ModelInfer(request=request, timeout=self.timeout)
+        return
+
+    async def predict(self, request: Dict) -> Dict:
+        """
+        The predict handler can be overridden to implement the model inference.
+        The default implementation makes an call to the predictor if predictor_host is specified
+        :param request: Dict passed from preprocess handler
+        :return: Dict
+        """
+        if not self.predictor_host:
+            raise NotImplementedError
+        # TODO grpc/http
+        if True:
+            return self._grpc_predict(request)
+        else:
+            return self._http_predict(request)
+
 
     async def explain(self, request: Dict) -> Dict:
         """

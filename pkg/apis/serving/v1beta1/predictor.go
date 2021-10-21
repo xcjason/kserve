@@ -73,6 +73,9 @@ type PredictorExtensionSpec struct {
 	// Protocol version to use by the predictor (i.e. v1 or v2)
 	// +optional
 	ProtocolVersion *constants.InferenceServiceProtocol `json:"protocolVersion,omitempty"`
+	// Network protocol used by the predictor (i.e. grpc or http)
+	// +optional
+	NetworkProtocol *string `json:"networkProtocol,omitempty"`
 	// Container enables overrides for the predictor.
 	// Each framework will have different defaults that are populated in the underlying container spec.
 	// +optional
