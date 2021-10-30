@@ -6,12 +6,7 @@ spec:
   predictor:
     triton:
       storageUri: "gs://kfserving-examples/models/torchscript"
-      runtimeVersion: 20.10-py3
-      networkProtocol: grpc
-      ports:
-        - name: h2c
-          protocol: TCP
-          containerPort: 9000
+      runtimeVersion: 21.08-py3
       env:
-        - name: OMP_NUM_THREADS
-          value: "1"
+      - name: OMP_NUM_THREADS
+        value: "1"

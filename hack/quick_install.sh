@@ -65,7 +65,7 @@ spec:
       useMCP: false
       # The third-party-jwt is not enabled on all k8s.
       # See: https://istio.io/docs/ops/best-practices/security/#configure-third-party-service-account-tokens
-      jwtPolicy: first-party-jwt
+      # jwtPolicy: first-party-jwt
 
   meshConfig:
     accessLogFile: /dev/stdout
